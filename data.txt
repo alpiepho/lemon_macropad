@@ -2,10 +2,10 @@
 # WARNING: this file is not secure!!!
 #
 # enter up to 12 lines in following format separated by :
-# <button number> : <optional color> : <type> : <string value>
+# <button number> : <color on> :<color off> : <type> : <string value>
 
-# button number: 1-12
-# optional color: empty or 0xnnnnnn or text like GREEN, YELLOW etc.
+# button number : 1-12
+# color on|off  : empty or 0xnnnnnn or text like GREEN, YELLOW etc.
 # type          : 'code' or 'text'
 # string value (code): valid Keycode string:
 #     BRIGHTNESS_DECREMENT
@@ -24,6 +24,6 @@
 # string value (text): "some valid string in double quotes"
 #     can include \t and \n
 
-1  : GREEN    : code : PLAY_PAUSE
-2  : 0x440000 : text : "enter 123"
-10 :          : text : "enter abc"
+1  : GREEN    : BLACK : code : PLAY_PAUSE
+2  : 0x440000 : BLACK : text : "enter 123"
+10 :          : BLACK : text : "enter abc"
