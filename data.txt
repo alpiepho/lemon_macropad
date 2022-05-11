@@ -1,0 +1,29 @@
+# data file for lemon_macropad key definitions
+# WARNING: this file is not secure!!!
+#
+# enter up to 12 lines in following format separated by :
+# <button number> : <optional color> : <type> : <string value>
+
+# button number: 1-12
+# optional color: empty or 0xnnnnnn or text like GREEN, YELLOW etc.
+# type          : 'code' or 'text'
+# string value (code): valid Keycode string:
+#     BRIGHTNESS_DECREMENT
+#     BRIGHTNESS_INCREMENT
+#     EJECT
+#     FAST_FORWARD
+#     MUTE
+#     PLAY_PAUSE
+#     RECORD
+#     REWIND
+#     SCAN_NEXT_TRACK
+#     SCAN_PREVIOUS_TRACK
+#     STOP
+#     VOLUME_DECREMENT
+#     VOLUME_INCREMENT
+# string value (text): "some valid string in double quotes"
+#     can include \t and \n
+
+1  : GREEN    : code : PLAY_PAUSE
+2  : 0x440000 : text : "enter 123"
+10 :          : text : "enter abc"
