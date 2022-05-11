@@ -69,27 +69,27 @@ macropad = MacroPad()
 text_lines = macropad.display_text()
 text_lines.show()
 
-def clearText():
+def clear_text():
     global text_lines
-    text_lines[0] = ''
-    text_lines[1] = ''
-    text_lines[2] = ''
+    text_lines[0].text = ''
+    text_lines[1].text = ''
+    text_lines[2].text = ''
 
-def setText(n, s):
+def set_text(n, s):
     global text_lines
-    text_lines[n] = s
+    text_lines[n].text = s
 
-def sendText():
+def send_text():
     global text_lines
     text_lines.show()
 
 def get_colorOn(index):
     for b in buttons:
         if index+1 == b.number:
-            if b.value.startswith('0x'):
-                return int(b.value, 16)
+            if b.colorOn.startswith('0x'):
+                return int(b.colorOn, 16)
             try:
-                return color_dict[b.value]
+                return color_dict[b.colorOn]
             except:
                 return color_dict['WHITE']
     return color_dict['WHITE']
@@ -97,10 +97,10 @@ def get_colorOn(index):
 def get_colorOff(index):
     for b in buttons:
         if index+1 == b.number:
-            if b.value.startswith('0x'):
-                return int(b.value, 16)
+            if b.colorOff.startswith('0x'):
+                return int(b.colorOff, 16)
             try:
-                return color_dict[b.value]
+                return color_dict[b.colorOff]
             except:
                 return color_dict['BLACK']
     return color_dict['BLACK']
@@ -126,18 +126,18 @@ def check_keys():
         if event.pressed:
             macropad.pixels[i] = get_colorOn(i)
         if event.released:
-            clearText()
-            setText(1, "Button #%d Pressed" % (i+1))
+            clear_text()
+            set_text(1, "Button #%d Pressed" % (i+1))
             b = get_button(i)
             if b != None:
-                if b.type == TYPE_CODE:
+                if b.type == 'code':
                     code, s = get_code(b.value)
-                    setText(2, 'code: ' + s)
+                    set_text(2, 'code: ' + s)
                     cc.send(code)
                 else:
-                    setText(2, 'text: ' + str(b.value))
+                    set_text(2, 'text: ' + str(b.value))
                     layout.write(b.value)
-            sendText()
+            send_text()
             macropad.pixels[i] = get_colorOff(i)
 
 
@@ -145,13 +145,13 @@ def check_keys():
 last_encoder = macropad.encoder
 def check_encoder():
     global text_lines
-    global last_position
+    global last_encoder
     if macropad.encoder != last_encoder:
         index = abs(macropad.encoder) % len(buttons)
         b = buttons[index]
-        clearText()
-        setText(1, f'\n\n\n{b.number:2}: "{b.value}"')
-        sendText()
+        clear_text()
+        set_text(1, f'{b.number:2}: {b.value}')
+        send_text()
     last_encoder = macropad.encoder
 
 # update neopixel off colors
@@ -160,10 +160,10 @@ for i in range(len(macropad.pixels)):
 macropad.pixels.brightness = 1.0
 
 # starting message
-clearText()
-setText(1, 'Waiting for button')
-setText(2, 'presses')
-sendText()
+clear_text()
+set_text(1, 'Waiting for button')
+set_text(2, 'presses')
+send_text()
 
 # main loop
 while True:
