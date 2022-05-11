@@ -17,18 +17,42 @@ BRIGHTNESS_HIGH = 1.0
 TYPE_CODE = 'code'
 TYPE_TEXT = 'text'
 
-WHITE = 0xFFFFFF
-BLACK = 0x000000
-GREEN = 0x00FF00
-YELLOW = 0xFFFF00
-ORANGE = 0xFF8C00
-RED = 0xFF0000
-BLUE = 0x0000FF
+color_dict = {
+    'WHITE': 0xFFFFFF,
+    'BLACK': 0x000000,
+    'GREEN': 0x00FF00,
+    'YELLOW': 0xFFFF00,
+    'ORANGE': 0xFF8C00,
+    'RED': 0xFF0000,
+    'BLUE': 0x0000FF,
+    'WHITE_DIM': 0xFFFFFF,
+    'BLACK_DIM': 0xFFFFFF,
+    'GREEN_DIM': 0x002200,
+    'YELLOW_DIM': 0x222200,
+    'ORANGE_DIM': 0x221200,
+    'RED_DIM': 0x220000,
+    'BLUE_DIM': 0x000022,
+}
+
+code_dict = {
+    'BRIGHTNESS_DECREMENT': ConsumerControlCode. BRIGHTNESS_DECREMENT,
+    'BRIGHTNESS_INCREMENT': ConsumerControlCode. BRIGHTNESS_INCREMENT,
+    'EJECT': ConsumerControlCode. EJECT,
+    'FAST_FORWARD': ConsumerControlCode. FAST_FORWARD,
+    'MUTE': ConsumerControlCode. MUTE,
+    'PLAY_PAUSE': ConsumerControlCode. PLAY_PAUSE,
+    'RECORD': ConsumerControlCode. RECORD,
+    'REWIND': ConsumerControlCode. REWIND,
+    'SCAN_NEXT_TRACK': ConsumerControlCode. SCAN_NEXT_TRACK,
+    'STOP': ConsumerControlCode. STOP,
+    'VOLUME_DECREMENT': ConsumerControlCode. VOLUME_DECREMENT,
+    'VOLUME_INCREMENT': ConsumerControlCode. VOLUME_INCREMENT,
+}
 
 class Button():
     number = 1
-    colorOn = WHITE
-    colorOff = BLACK
+    colorOn = color_dict['WHITE']
+    colorOff = color_dict['BLACK']
     type = TYPE_CODE
     codestr = ''
     value = Keycode.SPACE
@@ -40,29 +64,14 @@ cc = ConsumerControl(usb_hid.devices)
 macropad = MacroPad()
 
 
-
 def parse_color(s):
     if s.startswith('0x'):
         return int(s, 16)
     else:
-        value = WHITE
-        s = s.upper()
-        if s == 'WHITE':
-            value = WHITE
-        elif s == 'BLACK':
-            value = BLACK
-        elif s == 'GREEN':
-            value = GREEN
-        elif s == 'YELLOW':
-            value = YELLOW
-        elif s == 'RED':
-            value = RED
-        elif s == 'ORANGE':
-            value = ORANGE
-        elif s == 'BLUE':
-            value = BLUE
-        else:
-            print('WARNING: given color string ' + s + ' is not known, using WHITE.')
+        try:
+            value = color_dict[s]
+        except:
+            value = color_dict['WHITE']
     return value
 
 def parse_type(s):
@@ -72,47 +81,23 @@ def parse_type(s):
     return value
 
 def parse_code(s):
-    value = ConsumerControlCode.MUTE
-    s = s.upper()
-    if s == 'BRIGHTNESS_DECREMENT':
-        value =ConsumerControlCode. BRIGHTNESS_DECREMENT
-    elif s == 'BRIGHTNESS_INCREMENT':
-        value = ConsumerControlCode.BRIGHTNESS_INCREMENT
-    elif s == 'EJECT':
-        value = ConsumerControlCode.EJECT
-    elif s == 'FAST_FORWARD':
-        value = ConsumerControlCode.FAST_FORWARD
-    elif s == 'MUTE':
-        value = ConsumerControlCode.MUTE
-    elif s == 'PLAY_PAUSE':
-        value = ConsumerControlCode.PLAY_PAUSE
-    elif s == 'RECORD':
-        value = ConsumerControlCode.RECORD
-    elif s == 'REWIND':
-        value = ConsumerControlCode.REWIND
-    elif s == 'SCAN_NEXT_TRACK':
-        value = ConsumerControlCode.SCAN_NEXT_TRACK
-    elif s == 'STOP':
-        value = ConsumerControlCode.STOP
-    elif s == 'VOLUME_DECREMENT':
-        value = ConsumerControlCode.VOLUME_DECREMENT
-    elif s == 'VOLUME_INCREMENT':
-        value = ConsumerControlCode.VOLUME_INCREMENT
-    else:
-        print('WARNING: given code string ' + s + ' is not known, using MUTE.')
+    try:
+        value = code_dict[s]
+    except:
+        value = code_dict['MUTE']
     return value
 
 def get_colorOn(index):
     for b in buttons:
         if index+1 == b.number:
             return b.colorOn
-    return WHITE
+    return color_dict['WHITE']
 
 def get_colorOff(index):
     for b in buttons:
         if index+1 == b.number:
             return b.colorOff
-    return BLACK
+    return color_dict['BLACK']
 
 def get_button(index):
     for b in buttons:
@@ -127,7 +112,7 @@ def check_keys():
         if event.pressed:
             macropad.pixels[i] = get_colorOn(i)
         if event.released:
-            print("\n\nButton #%d Pressed" % i)
+            print("\n\nButton #%d Pressed" % (i+1))
             b = get_button(i)
             if b != None:
                 if b.type == TYPE_CODE:

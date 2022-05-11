@@ -24,6 +24,6 @@
 # string value (text): "some valid string in double quotes"
 #     can include \t and \n
 
-1  : GREEN    : BLACK : code : PLAY_PAUSE
-2  : 0x440000 : BLACK : text : "enter 123"
-10 :          : BLACK : text : "enter abc"
+1  : GREEN    : BALCK_DIM : code : PLAY_PAUSE
+2  : 0x440000 : 0x111111 : text : "enter 123"
+10 :          : 0x111111 : text : "enter abc"
