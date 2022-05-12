@@ -21,9 +21,6 @@ class Button():
 #       number 1-12 supported, 
 #       colors should match color_dict
 #       code value should match code_dict
-# NOTE: use the following to find valid strings
-# dump_keys()
-# dump_codes()
 buttons = [
     #      number,  colorOn,    colorOff,       type,       value
     Button(1,       'GREEN',    'BLACK_DIM',    'code',     'PLAY_PAUSE'),
@@ -31,6 +28,27 @@ buttons = [
     Button(10,      'WHITE',    '0x111111',     'text',     'enter abc'),
     Button(11,      'BLUE',     '0x111111',     'keys',     'UP_ARROW'),
 ]
+
+# NOTE: use the following to find valid strings
+# def dump_codes():
+#     print()
+#     print('ConsumerControlCode:')
+#     list = dir(ConsumerControlCode)
+#     for c in list:
+#         if not c.startswith('_'):
+#             print(c)
+
+# def dump_keys():
+#     print()
+#     print('Keycode:')
+#     list = dir(Keycode)
+#     for c in list:
+#         if not c.startswith('_'):
+#             print(c)
+
+# dump_keys()
+# dump_codes()
+
 
 color_dict = {
     'WHITE': 0xFFFFFF,
@@ -103,25 +121,12 @@ def get_code(s):
     except:
         return getattr(ConsumerControlCode, 'MUTE'), 'MUTE'
 
-def dump_codes():
-    print()
-    list = dir(ConsumerControlCode)
-    for c in list:
-        if not c.startswith('_'):
-            print(c)
-
 def get_key(s):
     try:
         return getattr(Keycode, s), s
     except:
         return getattr(Keycode, 'SPACE'), 'SPACE'
 
-def dump_keys():
-    print()
-    list = dir(Keycode)
-    for c in list:
-        if not c.startswith('_'):
-            print(c)
 
 # check all macropad keys and process key press
 def check_keys():
