@@ -6,8 +6,6 @@ import time
 import usb_hid
 from adafruit_hid.consumer_control import ConsumerControl
 from adafruit_hid.consumer_control_code import ConsumerControlCode
-from adafruit_hid.keyboard import Keyboard
-from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
 from adafruit_hid.keycode import Keycode
 from adafruit_macropad import MacroPad
 
@@ -23,11 +21,15 @@ class Button():
 #       number 1-12 supported, 
 #       colors should match color_dict
 #       code value should match code_dict
+# NOTE: use the following to find valid strings
+# dump_keys()
+# dump_codes()
 buttons = [
     #      number,  colorOn,    colorOff,       type,       value
     Button(1,       'GREEN',    'BLACK_DIM',    'code',     'PLAY_PAUSE'),
     Button(2,       '0x440000', '0x111111',     'text',     'enter 123'),
     Button(10,      'WHITE',    '0x111111',     'text',     'enter abc'),
+    Button(11,      'BLUE',     '0x111111',     'keys',     'UP_ARROW'),
 ]
 
 color_dict = {
@@ -47,25 +49,9 @@ color_dict = {
     'BLUE_DIM': 0x000022,
 }
 
-code_dict = {
-    'BRIGHTNESS_DECREMENT': ConsumerControlCode. BRIGHTNESS_DECREMENT,
-    'BRIGHTNESS_INCREMENT': ConsumerControlCode. BRIGHTNESS_INCREMENT,
-    'EJECT': ConsumerControlCode. EJECT,
-    'FAST_FORWARD': ConsumerControlCode. FAST_FORWARD,
-    'MUTE': ConsumerControlCode. MUTE,
-    'PLAY_PAUSE': ConsumerControlCode. PLAY_PAUSE,
-    'RECORD': ConsumerControlCode. RECORD,
-    'REWIND': ConsumerControlCode. REWIND,
-    'SCAN_NEXT_TRACK': ConsumerControlCode. SCAN_NEXT_TRACK,
-    'STOP': ConsumerControlCode. STOP,
-    'VOLUME_DECREMENT': ConsumerControlCode. VOLUME_DECREMENT,
-    'VOLUME_INCREMENT': ConsumerControlCode. VOLUME_INCREMENT,
-}
-
-keyboard = Keyboard(usb_hid.devices)
-layout = KeyboardLayoutUS(keyboard)
 cc = ConsumerControl(usb_hid.devices)
 macropad = MacroPad()
+
 text_lines = macropad.display_text()
 text_lines.show()
 
@@ -113,9 +99,29 @@ def get_button(index):
 
 def get_code(s):
     try:
-        return code_dict[s], s
+        return getattr(ConsumerControlCode, s), s
     except:
-        return code_dict['MUTE'], 'MUTE'
+        return getattr(ConsumerControlCode, 'MUTE'), 'MUTE'
+
+def dump_codes():
+    print()
+    list = dir(ConsumerControlCode)
+    for c in list:
+        if not c.startswith('_'):
+            print(c)
+
+def get_key(s):
+    try:
+        return getattr(Keycode, s), s
+    except:
+        return getattr(Keycode, 'SPACE'), 'SPACE'
+
+def dump_keys():
+    print()
+    list = dir(Keycode)
+    for c in list:
+        if not c.startswith('_'):
+            print(c)
 
 # check all macropad keys and process key press
 def check_keys():
@@ -134,9 +140,15 @@ def check_keys():
                     code, s = get_code(b.value)
                     set_text(2, 'code: ' + s)
                     cc.send(code)
+                elif b.type == 'keys':
+                    key, s = get_key(b.value)
+                    set_text(2, 'key: ' + s)
+                    macropad.keyboard.press(key)
+                    time.sleep(0.01)
+                    macropad.keyboard.release(key)
                 else:
                     set_text(2, 'text: ' + str(b.value))
-                    layout.write(b.value)
+                    macropad.keyboard_layout.write(b.value)
             send_text()
             macropad.pixels[i] = get_colorOff(i)
 
