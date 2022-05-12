@@ -6,16 +6,31 @@ import time
 import usb_hid
 from adafruit_hid.consumer_control import ConsumerControl
 from adafruit_hid.consumer_control_code import ConsumerControlCode
-from adafruit_hid.keyboard import Keyboard
-from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
 from adafruit_hid.keycode import Keycode
 from adafruit_macropad import MacroPad
 
-BRIGHTNESS_LOW = 0.2
-BRIGHTNESS_HIGH = 1.0
+class Button():
+    def __init__(self, number, colorOn, colorOff, type, value):
+        self.number = number
+        self.colorOn = colorOn
+        self.colorOff = colorOff
+        self.type = type
+        self.value = value
 
-TYPE_CODE = 'code'
-TYPE_TEXT = 'text'
+# NOTE: user can edit this table with care.  
+#       number 1-12 supported, 
+#       colors should match color_dict
+#       code value should match code_dict
+# NOTE: use the following to find valid strings
+# dump_keys()
+# dump_codes()
+buttons = [
+    #      number,  colorOn,    colorOff,       type,       value
+    Button(1,       'GREEN',    'BLACK_DIM',    'code',     'PLAY_PAUSE'),
+    Button(2,       '0x440000', '0x111111',     'text',     'enter 123'),
+    Button(10,      'WHITE',    '0x111111',     'text',     'enter abc'),
+    Button(11,      'BLUE',     '0x111111',     'keys',     'UP_ARROW'),
+]
 
 color_dict = {
     'WHITE': 0xFFFFFF,
@@ -34,69 +49,46 @@ color_dict = {
     'BLUE_DIM': 0x000022,
 }
 
-code_dict = {
-    'BRIGHTNESS_DECREMENT': ConsumerControlCode. BRIGHTNESS_DECREMENT,
-    'BRIGHTNESS_INCREMENT': ConsumerControlCode. BRIGHTNESS_INCREMENT,
-    'EJECT': ConsumerControlCode. EJECT,
-    'FAST_FORWARD': ConsumerControlCode. FAST_FORWARD,
-    'MUTE': ConsumerControlCode. MUTE,
-    'PLAY_PAUSE': ConsumerControlCode. PLAY_PAUSE,
-    'RECORD': ConsumerControlCode. RECORD,
-    'REWIND': ConsumerControlCode. REWIND,
-    'SCAN_NEXT_TRACK': ConsumerControlCode. SCAN_NEXT_TRACK,
-    'STOP': ConsumerControlCode. STOP,
-    'VOLUME_DECREMENT': ConsumerControlCode. VOLUME_DECREMENT,
-    'VOLUME_INCREMENT': ConsumerControlCode. VOLUME_INCREMENT,
-}
-
-class Button():
-    number = 1
-    colorOn = color_dict['WHITE']
-    colorOff = color_dict['BLACK']
-    type = TYPE_CODE
-    codestr = ''
-    value = Keycode.SPACE
-buttons = []
-
-keyboard = Keyboard(usb_hid.devices)
-layout = KeyboardLayoutUS(keyboard)
 cc = ConsumerControl(usb_hid.devices)
 macropad = MacroPad()
 
+text_lines = macropad.display_text()
+text_lines.show()
 
-def parse_color(s):
-    if s.startswith('0x'):
-        return int(s, 16)
-    else:
-        try:
-            value = color_dict[s]
-        except:
-            value = color_dict['WHITE']
-    return value
+def clear_text():
+    global text_lines
+    text_lines[0].text = ''
+    text_lines[1].text = ''
+    text_lines[2].text = ''
 
-def parse_type(s):
-    value = TYPE_TEXT
-    if s.lower() == 'code':
-        value = TYPE_CODE
-    return value
+def set_text(n, s):
+    global text_lines
+    text_lines[n].text = s
 
-def parse_code(s):
-    try:
-        value = code_dict[s]
-    except:
-        value = code_dict['MUTE']
-    return value
+def send_text():
+    global text_lines
+    text_lines.show()
 
 def get_colorOn(index):
     for b in buttons:
         if index+1 == b.number:
-            return b.colorOn
+            if b.colorOn.startswith('0x'):
+                return int(b.colorOn, 16)
+            try:
+                return color_dict[b.colorOn]
+            except:
+                return color_dict['WHITE']
     return color_dict['WHITE']
 
 def get_colorOff(index):
     for b in buttons:
         if index+1 == b.number:
-            return b.colorOff
+            if b.colorOff.startswith('0x'):
+                return int(b.colorOff, 16)
+            try:
+                return color_dict[b.colorOff]
+            except:
+                return color_dict['BLACK']
     return color_dict['BLACK']
 
 def get_button(index):
@@ -105,92 +97,88 @@ def get_button(index):
             return b
     return None
 
+def get_code(s):
+    try:
+        return getattr(ConsumerControlCode, s), s
+    except:
+        return getattr(ConsumerControlCode, 'MUTE'), 'MUTE'
+
+def dump_codes():
+    print()
+    list = dir(ConsumerControlCode)
+    for c in list:
+        if not c.startswith('_'):
+            print(c)
+
+def get_key(s):
+    try:
+        return getattr(Keycode, s), s
+    except:
+        return getattr(Keycode, 'SPACE'), 'SPACE'
+
+def dump_keys():
+    print()
+    list = dir(Keycode)
+    for c in list:
+        if not c.startswith('_'):
+            print(c)
+
+# check all macropad keys and process key press
 def check_keys():
+    global text_lines
     event = macropad.keys.events.get()
     if event:
         i = event.key_number
         if event.pressed:
             macropad.pixels[i] = get_colorOn(i)
         if event.released:
-            print("\n\nButton #%d Pressed" % (i+1))
+            clear_text()
+            set_text(1, "Button #%d Pressed" % (i+1))
             b = get_button(i)
             if b != None:
-                if b.type == TYPE_CODE:
-                    print('code: ' + str(b.value))
-                    cc.send(b.value)
+                if b.type == 'code':
+                    code, s = get_code(b.value)
+                    set_text(2, 'code: ' + s)
+                    cc.send(code)
+                elif b.type == 'keys':
+                    key, s = get_key(b.value)
+                    set_text(2, 'key: ' + s)
+                    macropad.keyboard.press(key)
+                    time.sleep(0.01)
+                    macropad.keyboard.release(key)
                 else:
-                    print('text: ' + str(b.value))
-                    layout.write(b.value)
-            else:
-                print()
+                    set_text(2, 'text: ' + str(b.value))
+                    macropad.keyboard_layout.write(b.value)
+            send_text()
             macropad.pixels[i] = get_colorOff(i)
 
 
-last_position = macropad.encoder
+# check macropad encoder and display current settings
+last_encoder = macropad.encoder
 def check_encoder():
-    global last_position
-    if macropad.encoder != last_position:
+    global text_lines
+    global last_encoder
+    if macropad.encoder != last_encoder:
         index = abs(macropad.encoder) % len(buttons)
         b = buttons[index]
-        if b.type == TYPE_CODE:
-            print(f'\n\n\n{b.number:2}: {b.codestr}')
-        else:
-            print(f'\n\n\n{b.number:2}: "{b.value}"')
-    last_position = macropad.encoder
+        clear_text()
+        set_text(1, f'{b.number:2}: {b.value}')
+        send_text()
+    last_encoder = macropad.encoder
 
-
-
-
-# read data.txt
-data_found = True
-try:
-    with open('data.txt') as file:
-        lines = file.readlines()
-        for line in lines:
-            line = line.strip()
-            if line.startswith('#'):
-                continue
-            if len(line) == 0:
-                continue
-            print(line)
-            parts = line.split(':')
-            if len(parts) == 5:
-                b = Button()
-                b.number = int(parts[0].strip())
-                b.colorOn = parse_color(parts[1].strip())
-                b.colorOff = parse_color(parts[2].strip())
-                b.type = parse_type(parts[3].strip())
-                if b.type == TYPE_CODE:
-                    b.codestr = parts[4].strip()
-                    b.value = parse_code(parts[4].strip())
-                else:
-                    b.value = parts[4].replace('"', '').strip()
-                buttons.append(b)
-except Exception as err:
-    data_found = False
-
-# update neopixel colors from data.txt
+# update neopixel off colors
 for i in range(len(macropad.pixels)):
     macropad.pixels[i] = get_colorOff(i)
-macropad.pixels.brightness = BRIGHTNESS_HIGH
+macropad.pixels.brightness = 1.0
 
 # starting message
-if data_found:
-    print("\n\nWaiting for button presses")
-else:
-    print('Please provide data.txt with details about buttons.')
+clear_text()
+set_text(1, 'Waiting for button')
+set_text(2, 'presses')
+send_text()
 
 # main loop
 while True:
     check_keys()
     check_encoder()
     time.sleep(0.01)
-
-# TODO 
-# - refactor
-# - hold strings from data, convert when needed
-# - test mode?
-# - clear lcd icon
-# - README 
-# References - move to README
-# https://github.com/Neradoc/Circuitpython_Keyboard_Layouts
