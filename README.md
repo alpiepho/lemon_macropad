@@ -199,10 +199,10 @@ BRIGHTNESS_INCREMENT
 </pre>
 
 # TODO
-- expand to use sequences of Keycodes
-- expand to use general sequences of chars and Keycodes
-- want CONTROL + SHIFT + M for Teams
-- toggle color sets (ie. muted vs not)
+- [x] expand to use sequences of Keycodes
+- [x] expand to use general sequences of chars and Keycodes
+- [x] want CONTROL + SHIFT + M for Teams
+- [x] toggle color sets (ie. muted vs not)
 
 # References
 - https://learn.adafruit.com/qtpy-lemon-mechanical-keypad-macropad
