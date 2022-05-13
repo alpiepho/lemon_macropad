@@ -10,10 +10,10 @@ from adafruit_hid.keycode import Keycode
 from adafruit_macropad import MacroPad
 
 class Button():
-    def __init__(self, number, colorOn, colorOff, type, value):
+    def __init__(self, number, colors, index, type, value):
         self.number = number
-        self.colorOn = colorOn
-        self.colorOff = colorOff
+        self.colors = colors
+        self.index = index
         self.type = type
         self.value = value
 
@@ -21,12 +21,23 @@ class Button():
 #       number 1-12 supported, 
 #       colors should match color_dict
 #       code value should match code_dict
+#           off,            pressed     off             pressed ...
+colors0 = ['BLACK_DIM',     'GREEN'                             ]
+colors1 = ['BLACK_DIM',     'RED',      'BLACK_DIM',    'GREEN' ]
+colors2 = ['0x111111',      '0x440000'                          ]
+colors3 = ['0x111111',      'WHITE'                             ]
+colors4 = ['BLACK_DIM',     'GREEN'                             ]
+colors7 = ['GREEN_DIM',     'BLACK',    'RED_DIM',      'BLACK' ] # mute off, mute on...
 buttons = [
-    #      number,  colorOn,    colorOff,       type,       value
-    Button(1,       'GREEN',    'BLACK_DIM',    'code',     'PLAY_PAUSE'),
-    Button(2,       '0x440000', '0x111111',     'text',     'enter 123'),
-    Button(10,      'WHITE',    '0x111111',     'text',     'enter abc'),
-    Button(11,      'BLUE',     '0x111111',     'keys',     'UP_ARROW'),
+    #      number,      colors,       index,       type,       value
+    Button(1,           colors1, 0,     'text',     ''                  ), # cycle colors
+    # Button(2,           colors2, 0,     'text',     'enter 123'         ),
+    # Button(3,           colors3, 0,     'text',     'enter abc'         ),
+    # Button(4,           colors4, 0,     'code',     'PLAY_PAUSE'        ),
+    Button(7,           colors7, 0,     'keys',     'CONTROL SHIFT M'   ), # Teams Mute
+    Button(10,          colors0, 0,     'keys',     'WINDOWS ALT TAB'   ), # show all windows
+    Button(11,          colors0, 0,     'keys',     'RIGHT_ARROW'       ), # rigtt
+    Button(12,          colors0, 0,     'keys',     'ENTER'             ), # select
 ]
 
 # NOTE: use the following to find valid strings
@@ -87,24 +98,20 @@ def send_text():
     global text_lines
     text_lines.show()
 
-def get_colorOn(index):
+def get_color(index):
     for b in buttons:
         if index+1 == b.number:
-            if b.colorOn.startswith('0x'):
-                return int(b.colorOn, 16)
+            # next color and update index
+            color = b.colors[b.index]
+            print(color)
+            b.index = b.index + 1
+            if b.index >= len(b.colors):
+                b.index = 0
+            # convert color string
+            if color.startswith('0x'):
+                return int(color, 16)
             try:
-                return color_dict[b.colorOn]
-            except:
-                return color_dict['WHITE']
-    return color_dict['WHITE']
-
-def get_colorOff(index):
-    for b in buttons:
-        if index+1 == b.number:
-            if b.colorOff.startswith('0x'):
-                return int(b.colorOff, 16)
-            try:
-                return color_dict[b.colorOff]
+                return color_dict[color]
             except:
                 return color_dict['BLACK']
     return color_dict['BLACK']
@@ -135,7 +142,7 @@ def check_keys():
     if event:
         i = event.key_number
         if event.pressed:
-            macropad.pixels[i] = get_colorOn(i)
+            macropad.pixels[i] = get_color(i)
         if event.released:
             clear_text()
             set_text(1, "Button #%d Pressed" % (i+1))
@@ -146,16 +153,21 @@ def check_keys():
                     set_text(2, 'code: ' + s)
                     cc.send(code)
                 elif b.type == 'keys':
-                    key, s = get_key(b.value)
-                    set_text(2, 'key: ' + s)
-                    macropad.keyboard.press(key)
+                    parts = b.value.split(' ')
+                    set_text(2, 'key: ' + b.value)
+                    for p in parts:
+                        key, s = get_key(p)
+                        print(s)
+                        macropad.keyboard.press(key)
                     time.sleep(0.01)
-                    macropad.keyboard.release(key)
+                    for p in parts:
+                        key, s = get_key(p)
+                        macropad.keyboard.release(key)
                 else:
                     set_text(2, 'text: ' + str(b.value))
                     macropad.keyboard_layout.write(b.value)
             send_text()
-            macropad.pixels[i] = get_colorOff(i)
+            macropad.pixels[i] = get_color(i)
 
 
 # check macropad encoder and display current settings
@@ -173,7 +185,7 @@ def check_encoder():
 
 # update neopixel off colors
 for i in range(len(macropad.pixels)):
-    macropad.pixels[i] = get_colorOff(i)
+    macropad.pixels[i] = get_color(i)
 macropad.pixels.brightness = 1.0
 
 # starting message
